@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ValueField(
     name: String,
-    value: String,
+    value: String?,
     modifier: Modifier,
     isPercent: Boolean = false,
     onValueChange: (TextFieldValue) -> Unit
@@ -52,8 +52,8 @@ fun ValueField(
             ),
             singleLine = true,
             value = TextFieldValue(
-                text = value,
-                selection = TextRange(value.length)
+                text = value ?: "",
+                selection = TextRange(value?.length ?: 0)
             ),
             onValueChange = onValueChange,
             /*{

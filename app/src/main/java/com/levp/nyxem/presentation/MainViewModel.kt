@@ -2,7 +2,8 @@ package com.levp.nyxem.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.levp.nyxem.data.AbilitiesState
+import com.levp.nyxem.data.AbilityState
+import com.levp.nyxem.data.ValueState
 import com.levp.nyxem.data.calculateDamage
 import com.levp.nyxem.data.constants.Abilities
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,12 +12,12 @@ import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
 
-    val mutableAbilityState = MutableStateFlow(AbilitiesState())
+    private val mutableAbilityState = MutableStateFlow(AbilityState())
     val currentAbilityState = mutableAbilityState.asStateFlow()
 
-    val valuesState = MutableStateFlow(ValuesState.initialState())
+    val valueState = MutableStateFlow(ValueState.initialState())
 
-    val mutableDamage = MutableStateFlow("0.0")
+    private val mutableDamage = MutableStateFlow("0.0")
     val currentDamage = mutableDamage.asStateFlow()
 
 
@@ -78,51 +79,61 @@ class MainViewModel : ViewModel() {
     }
 
     fun handleUpdate(update: ValueUpdate) {
-        valuesState.value = reduce(valuesState.value, update)
+        valueState.value = reduce(valueState.value, update)
         viewModelScope.launch {
             calculateDamage()
         }
     }
 
-    fun reduce(oldValues: ValuesState, update: ValueUpdate): ValuesState {
-        return when (update) {
+    fun reduce(oldValue: ValueState, newValue: ValueUpdate): ValueState {
+        return when (newValue) {
             is ValueUpdate.UpdateDamage -> {
-                oldValues.copy(attackDamage = update.dmg)
+                if(newValue.dmg.isNotEmpty()) {
+                    oldValue.copy(attackDamage = newValue.dmg)
+                } else {
+                    oldValue.copy(attackDamage = null)
+                }
             }
 
             is ValueUpdate.UpdateMaxMana -> {
-                val intVal = update.maxMana.toIntOrNull() ?: -1
+                if (newValue.maxMana.isEmpty()) {
+                    return oldValue.copy(targetMaxMP = null)
+                }
+                val intVal = newValue.maxMana.toIntOrNull() ?: -1
                 if (intVal in 100..6000) {
-                    oldValues.copy(targetMaxMP = update.maxMana)
+                    oldValue.copy(targetMaxMP = newValue.maxMana)
                 } else {
-                    oldValues
+                    oldValue
                 }
             }
 
             is ValueUpdate.UpdateMagResistance -> {
-                val intVal = update.magRes.toIntOrNull() ?: -1
+                if (newValue.magRes.isEmpty()) {
+                    return oldValue.copy(targetMagResist = null)
+                }
+                val intVal = newValue.magRes.toIntOrNull() ?: -1
                 if (intVal in 0..100) {
-                    oldValues.copy(targetMagResist = update.magRes)
+                    oldValue.copy(targetMagResist = newValue.magRes)
                 } else {
-                    oldValues
+                    oldValue
                 }
             }
 
-            is ValueUpdate.UpdatePhysResistance -> {
-                val intVal = update.physRes.toIntOrNull() ?: -1
+            is ValueUpdate.UpdatePhysResistance -> {//hehe
+                val intVal = newValue.physRes.toIntOrNull() ?: -1
                 if (intVal in 0..100) {
-                    oldValues.copy(targetPhysResist = update.physRes)
+                    oldValue.copy(targetPhysResist = newValue.physRes)
                 } else {
-                    oldValues
+                    oldValue
                 }
             }
 
             is ValueUpdate.UpdateMagAmp -> {
-                val intVal = update.magAmp.toIntOrNull() ?: -1
+                val intVal = newValue.magAmp.toIntOrNull() ?: -1
                 if (intVal in 0..100) {
-                    oldValues.copy(selfMagicAmplify = update.magAmp)
+                    oldValue.copy(selfMagicAmplify = newValue.magAmp)
                 } else {
-                    oldValues
+                    oldValue
                 }
             }
         }
@@ -147,7 +158,7 @@ class MainViewModel : ViewModel() {
     }*/
 
     private suspend fun calculateDamage() {
-        val dmg = calculateDamage(currentAbilityState.value, valuesState.value)
+        val dmg = calculateDamage(currentAbilityState.value, valueState.value)
         //val df = DecimalFormat("#.##")
         val formatted = String.format("%.2f", dmg).replace(",", ".")
         mutableDamage.emit(formatted)
