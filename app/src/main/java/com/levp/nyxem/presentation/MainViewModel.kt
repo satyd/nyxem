@@ -1,25 +1,113 @@
 package com.levp.nyxem.presentation
 
+import android.annotation.SuppressLint
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.levp.nyxem.data.AbilityState
 import com.levp.nyxem.data.ValueState
 import com.levp.nyxem.data.calculateDamage
 import com.levp.nyxem.data.constants.Abilities
+import com.levp.nyxem.data.toAbilityUiState
+import com.levp.nyxem.presentation.uistates.ValueUiState
+import com.levp.nyxem.presentation.uistates.toAbilityState
+import com.levp.nyxem.presentation.uistates.toValueState
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@OptIn(FlowPreview::class)
 class MainViewModel : ViewModel() {
 
     private val mutableAbilityState = MutableStateFlow(AbilityState())
     val currentAbilityState = mutableAbilityState.asStateFlow()
 
-    val valueState = MutableStateFlow(ValueState.initialState())
+    private val mutableValueState = MutableStateFlow(ValueState())
+    val currentValueState = mutableValueState.asStateFlow()
+
+    val uiState = MutableStateFlow(UiState.initState())
+
+    val dataState = MutableStateFlow(UiState.initState())
+
+    //Flow for deb
+    private val inputFlow = MutableSharedFlow<UpdateIntent>()
 
     private val mutableDamage = MutableStateFlow("0.0")
     val currentDamage = mutableDamage.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            inputFlow
+                .debounce(2000L)
+                .collectLatest { intent ->
+                    //handleUpdate(intent)
+                    //calculateDamage()
+                }
+        }
+    }
+
+    fun handleUpdate(update: UpdateIntent) {
+        when (update) {
+            UpdateIntent.Error -> TODO()
+            is UpdateIntent.UpdateAbility -> {
+                updateAbilityLevel(update.isIncrease, update.ability)
+            }
+
+            is UpdateIntent.UpdateValue -> {
+                uiState.update { currState ->
+                    currState.copy(
+                        valueState = updateValue(update.valueUpdate)
+                    )
+                }
+            }
+        }
+        //validateInput()
+    }
+
+    suspend fun validateInput() {
+        uiState.update {
+            it.copy(
+                isLoading = true
+            )
+        }
+        Log.i("hehe", "validate input ${uiState.value}")
+        val values = uiState.value.valueState.toValueState()
+        val abilities = uiState.value.abilityState.toAbilityState()
+        var isError = false
+
+        if ((values.targetMaxMP ?: 0) < 0 || (values.targetMaxMP ?: 0) > 6000) {
+            isError = true
+            uiState.update {
+                it.copy(
+                    isError = true
+                )
+            }
+        }
+        if (!isError) {
+            uiState.update {
+                it.copy(
+                    isError = false
+                )
+            }
+            dataState.update {
+                it.copy(
+                    abilityState = uiState.value.abilityState,
+                    valueState = uiState.value.valueState
+                )
+            }
+            calculateDamage()
+        }
+
+    }
+
+    fun switchErrorState(isError: Boolean) {
+
+    }
 
     fun updateAbilityLevel(isIncrease: Boolean, ability: Abilities) {
         viewModelScope.launch {
@@ -29,6 +117,8 @@ class MainViewModel : ViewModel() {
                 Abilities.Vendetta -> currentAbilityState.value.levelVendetta
                 Abilities.Dagon -> currentAbilityState.value.levelDagon
                 Abilities.Attack -> currentAbilityState.value.numberOfAttacks
+                Abilities.Ethereal -> currentAbilityState.value.levelEthereal
+                Abilities.Phylactery -> currentAbilityState.value.levelPhylactery
             }
             val newValue = if (isIncrease) {
                 if (abilityLevel < ability.maxLevel) {
@@ -73,30 +163,40 @@ class MainViewModel : ViewModel() {
                         numberOfAttacks = newValue
                     )
                 )
+
+                Abilities.Phylactery -> mutableAbilityState.emit(
+                    mutableAbilityState.value.copy(
+                        levelPhylactery = newValue
+                    )
+                )
+                Abilities.Ethereal -> mutableAbilityState.emit(
+                    mutableAbilityState.value.copy(
+                        levelEthereal = newValue
+                    )
+                )
             }
-            calculateDamage()
+            uiState.update {
+                it.copy(
+                    abilityState = mutableAbilityState.value.toAbilityUiState()
+                )
+            }
         }
     }
 
-    fun handleUpdate(update: ValueUpdate) {
-        valueState.value = reduce(valueState.value, update)
-        viewModelScope.launch {
-            calculateDamage()
-        }
-    }
-
-    fun reduce(oldValue: ValueState, newValue: ValueUpdate): ValueState {
-        return when (newValue) {
+    fun updateValue(newValue: ValueUpdate): ValueUiState {
+        val curState = uiState.value.valueState
+        val newState = when (newValue) {
             is ValueUpdate.UpdateDamage -> {
-                if(newValue.dmg.isNotEmpty()) {
-                    oldValue.copy(attackDamage = newValue.dmg)
-                } else {
-                    oldValue.copy(attackDamage = null)
-                }
+                curState.copy(
+                    attackDamage = newValue.dmg
+                )
             }
 
             is ValueUpdate.UpdateMaxMana -> {
-                if (newValue.maxMana.isEmpty()) {
+                curState.copy(
+                    targetMaxMP = newValue.maxMana
+                )
+                /*if (newValue.maxMana.isEmpty()) {
                     return oldValue.copy(targetMaxMP = null)
                 }
                 val intVal = newValue.maxMana.toIntOrNull() ?: -1
@@ -104,11 +204,14 @@ class MainViewModel : ViewModel() {
                     oldValue.copy(targetMaxMP = newValue.maxMana)
                 } else {
                     oldValue
-                }
+                }*/
             }
 
             is ValueUpdate.UpdateMagResistance -> {
-                if (newValue.magRes.isEmpty()) {
+                curState.copy(
+                    targetMagResist = newValue.magRes
+                )
+                /*if (newValue.magRes.isEmpty()) {
                     return oldValue.copy(targetMagResist = null)
                 }
                 val intVal = newValue.magRes.toIntOrNull() ?: -1
@@ -116,51 +219,48 @@ class MainViewModel : ViewModel() {
                     oldValue.copy(targetMagResist = newValue.magRes)
                 } else {
                     oldValue
-                }
+                }*/
             }
 
             is ValueUpdate.UpdatePhysResistance -> {//hehe
-                val intVal = newValue.physRes.toIntOrNull() ?: -1
+                curState.copy(
+                    targetPhysResist = newValue.physRes
+                )
+                /*val intVal = newValue.physRes.toIntOrNull() ?: -1
                 if (intVal in 0..100) {
                     oldValue.copy(targetPhysResist = newValue.physRes)
                 } else {
                     oldValue
-                }
+                }*/
             }
 
             is ValueUpdate.UpdateMagAmp -> {
-                val intVal = newValue.magAmp.toIntOrNull() ?: -1
-                if (intVal in 0..100) {
-                    oldValue.copy(selfMagicAmplify = newValue.magAmp)
-                } else {
-                    oldValue
-                }
+                curState.copy(
+                    selfMagicAmplify = newValue.magAmp
+                )
             }
         }
-
+        return newState
     }
 
-    /*fun changeDamage(newDamage: String) {
-        //currentMessage.tryEmit(message)
-        viewModelScope.launch {
-            if (newDamage.isNotEmpty()) {
-                if (newDamage.isDigitsOnly()) {
-                    val intDmg = newDamage.toInt()
-                    if (intDmg < 3000) {
-                        mutableAbilityState.emit(currentAbilityState.value.copy(attackDamage = intDmg.toString()))
-                        calculateDamage()
-                    }
-                } // hehe else incorrect dmg value
-            } else {
-                mutableAbilityState.emit(currentAbilityState.value.copy(attackDamage = ""))
-            }
-        }
-    }*/
-
+    @SuppressLint("DefaultLocale")
     private suspend fun calculateDamage() {
-        val dmg = calculateDamage(currentAbilityState.value, valueState.value)
-        //val df = DecimalFormat("#.##")
-        val formatted = String.format("%.2f", dmg).replace(",", ".")
-        mutableDamage.emit(formatted)
+        uiState
+            .debounce(1000L)
+            .collectLatest {
+                val dmg = calculateDamage(
+                    it.abilityState.toAbilityState(),
+                    it.valueState.toValueState()
+                )
+                //val df = DecimalFormat("#.##")
+                val formatted = String.format("%.2f", dmg).replace(",", ".")
+                mutableDamage.emit(formatted)
+                Log.i("hehe","damage updated")
+                uiState.update {
+                    it.copy(
+                        isLoading = false
+                    )
+                }
+            }
     }
 }

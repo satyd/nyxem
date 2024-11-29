@@ -8,6 +8,8 @@ data class AbilityState(
     var levelMindFlare: Int = 0,
     var levelVendetta: Int = 0,
     var levelDagon: Int = 0,
+    var levelEthereal: Int = 0,
+    var levelPhylactery: Int = 0,
 )
 
 fun AbilityState.toAbilityUiState(): AbilityUiState =
@@ -16,5 +18,7 @@ fun AbilityState.toAbilityUiState(): AbilityUiState =
         levelImpale = levelImpale.toString(),
         levelMindFlare = levelMindFlare.toString(),
         levelVendetta = levelVendetta.toString(),
-        levelDagon = levelDagon.toString()
+        levelDagon = levelDagon.toString(),
+        levelEthereal = levelEthereal.toString(),
+        levelPhylactery = levelPhylactery.toString(),
     )

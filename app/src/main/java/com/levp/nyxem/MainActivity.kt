@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,9 +32,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.levp.nyxem.presentation.MainViewModel
 import com.levp.nyxem.data.constants.Abilities
+import com.levp.nyxem.presentation.UpdateIntent
 import com.levp.nyxem.presentation.ValueUpdate
 import com.levp.nyxem.ui.AbilityCounters
 import com.levp.nyxem.ui.AbilityElement
+import com.levp.nyxem.ui.ResultPart
 import com.levp.nyxem.ui.ValueField
 import com.levp.nyxem.ui.theme.NyxemTheme
 
@@ -47,28 +49,46 @@ class MainActivity : ComponentActivity() {
         setContent {
             NyxemTheme {
                 val focusManager = LocalFocusManager.current
+
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
 
-                    val abilityState = viewModel.currentAbilityState.collectAsState()
-                    val valuesState = viewModel.valueState.collectAsState()
+                    val dagonDrawableList = listOf<Int>(
+                        R.drawable.ic_dagon_1,
+                        R.drawable.ic_dagon_1,
+                        R.drawable.ic_dagon_2,
+                        R.drawable.ic_dagon_3,
+                        R.drawable.ic_dagon_4,
+                        R.drawable.ic_dagon_5,
+                    )
+                    val uiState = viewModel.uiState.collectAsState()
+                    val abilityState = uiState.value.abilityState
+                    val valueState = uiState.value.valueState
 
+                    LaunchedEffect(
+                        uiState.value.valueState,
+                        uiState.value.abilityState
+                    ) {
+                        viewModel.validateInput()
+                    }
+                    //current total damage
                     val damage = viewModel.currentDamage.collectAsState()
                     val updateAbilityValue: (Boolean, Abilities) -> Unit = remember {
                         { increase, ability ->
-                            viewModel.updateAbilityLevel(increase, ability)
+                            viewModel.handleUpdate(UpdateIntent.UpdateAbility(increase, ability))
+                            //viewModel.updateAbilityLevel(increase, ability)
                         }
                     }
 
-                    var textDmg = valuesState.value.attackDamage
+                    var textDmg = ""
                     var textFieldValueState by remember {
                         mutableStateOf(
                             TextFieldValue(
-                                text = valuesState.value.attackDamage ?: "",
-                                selection = TextRange(valuesState.value.attackDamage?.length ?: 0)
+                                text = valueState.attackDamage ?: "",
+                                selection = TextRange(valueState.attackDamage?.length ?: 0)
                             )
                         )
                     }
@@ -86,15 +106,22 @@ class MainActivity : ComponentActivity() {
                             AbilityElement(
                                 drawableId = R.drawable.ic_impale,
                                 name = "Impale",
-                                currentLevel = abilityState.value.levelImpale.toString(),
+                                currentLevel = abilityState.levelImpale,
                                 ability = Abilities.Impale,
                                 onClick = updateAbilityValue
                             )
                             AbilityElement(
                                 drawableId = R.drawable.ic_mind_flare,
                                 name = "Mind Flare",
-                                currentLevel = abilityState.value.levelMindFlare.toString(),
+                                currentLevel = abilityState.levelMindFlare,
                                 ability = Abilities.MindFlare,
+                                onClick = updateAbilityValue
+                            )
+                            AbilityElement(
+                                drawableId = R.drawable.ic_vendetta,
+                                name = "Vendetta",
+                                currentLevel = abilityState.levelVendetta,
+                                ability = Abilities.Vendetta,
                                 onClick = updateAbilityValue
                             )
                         }
@@ -103,18 +130,34 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
+                            val dagonLvl = abilityState.levelDagon.toIntOrNull() ?: 0
+                            val phylacteryLvl = abilityState.levelPhylactery.toIntOrNull() ?: 0
+
                             AbilityElement(
-                                drawableId = R.drawable.ic_vendetta,
-                                name = "Vendetta",
-                                currentLevel = abilityState.value.levelVendetta.toString(),
-                                ability = Abilities.Vendetta,
+                                drawableId = dagonDrawableList[dagonLvl],
+                                name = "Dagon",
+                                currentLevel = abilityState.levelDagon,
+                                ability = Abilities.Dagon,
                                 onClick = updateAbilityValue
                             )
                             AbilityElement(
-                                drawableId = R.drawable.ic_dagon_1,
-                                name = "Dagon",
-                                currentLevel = abilityState.value.levelDagon.toString(),
-                                ability = Abilities.Dagon,
+                                drawableId = R.drawable.ic_ethereal,
+                                name = "Ethereal",
+                                currentLevel = abilityState.levelEthereal,
+                                ability = Abilities.Ethereal,
+                                onClick = updateAbilityValue
+                            )
+                            val (phylacteryDrawable, phylacteryName) =
+                                if (phylacteryLvl <= 1) {
+                                    R.drawable.ic_phylactery to "Phylactery"
+                                } else {
+                                    R.drawable.ic_khanda to "Khanda"
+                                }
+                            AbilityElement(
+                                drawableId = phylacteryDrawable,
+                                name = phylacteryName,
+                                currentLevel = abilityState.levelPhylactery,
+                                ability = Abilities.Phylactery,
                                 onClick = updateAbilityValue
                             )
                         }
@@ -128,15 +171,19 @@ class MainActivity : ComponentActivity() {
                         ) {
                             ValueField(
                                 name = "Attack Damage",
-                                value = valuesState.value.attackDamage,
+                                value = valueState.attackDamage,
                                 modifier = Modifier,
                                 onValueChange = { newValue ->
-                                    viewModel.handleUpdate(ValueUpdate.UpdateDamage(newValue.text))
+                                    viewModel.handleUpdate(
+                                        UpdateIntent.UpdateValue(
+                                            ValueUpdate.UpdateDamage(newValue.text)
+                                        )
+                                    )
                                 }
                             )
                             Spacer(modifier = Modifier.width(16.dp))
                             AbilityCounters(
-                                currentLevel = abilityState.value.numberOfAttacks.toString(),
+                                currentLevel = abilityState.numberOfAttacks,
                                 ability = Abilities.Attack,
                                 onClick = updateAbilityValue
                             )
@@ -152,13 +199,15 @@ class MainActivity : ComponentActivity() {
                             Column {
                                 ValueField(
                                     name = "Max Mana",
-                                    value = valuesState.value.targetMaxMP,
+                                    value = valueState.targetMaxMP,
                                     isPercent = false,
                                     modifier = Modifier,
                                     onValueChange = { newValue ->
                                         viewModel.handleUpdate(
-                                            ValueUpdate.UpdateMaxMana(
-                                                newValue.text
+                                            UpdateIntent.UpdateValue(
+                                                ValueUpdate.UpdateMaxMana(
+                                                    newValue.text
+                                                )
                                             )
                                         )
                                     }
@@ -166,13 +215,15 @@ class MainActivity : ComponentActivity() {
                                 Spacer(modifier = Modifier.size(12.dp))
                                 ValueField(
                                     name = "Mag Amp ",
-                                    value = valuesState.value.selfMagicAmplify,
+                                    value = valueState.selfMagicAmplify,
                                     isPercent = true,
                                     modifier = Modifier,
                                     onValueChange = { newValue ->
                                         viewModel.handleUpdate(
-                                            ValueUpdate.UpdateMagAmp(
-                                                newValue.text
+                                            UpdateIntent.UpdateValue(
+                                                ValueUpdate.UpdateMagAmp(
+                                                    newValue.text
+                                                )
                                             )
                                         )
                                     }
@@ -183,13 +234,15 @@ class MainActivity : ComponentActivity() {
                                 //target physical resist
                                 ValueField(
                                     name = "Mag Res ",
-                                    value = valuesState.value.targetMagResist,
+                                    value = valueState.targetMagResist,
                                     isPercent = true,
                                     modifier = Modifier,
                                     onValueChange = { newValue ->
                                         viewModel.handleUpdate(
-                                            ValueUpdate.UpdateMagResistance(
-                                                newValue.text
+                                            UpdateIntent.UpdateValue(
+                                                ValueUpdate.UpdateMagResistance(
+                                                    newValue.text
+                                                )
                                             )
                                         )
                                     }
@@ -197,13 +250,15 @@ class MainActivity : ComponentActivity() {
                                 Spacer(modifier = Modifier.size(12.dp))
                                 ValueField(
                                     name = "Phys Res",
-                                    value = valuesState.value.targetPhysResist,
+                                    value = valueState.targetPhysResist,
                                     isPercent = true,
                                     modifier = Modifier,
                                     onValueChange = { newValue ->
                                         viewModel.handleUpdate(
-                                            ValueUpdate.UpdatePhysResistance(
-                                                newValue.text
+                                            UpdateIntent.UpdateValue(
+                                                ValueUpdate.UpdatePhysResistance(
+                                                    newValue.text
+                                                )
                                             )
                                         )
                                     }
@@ -211,12 +266,11 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         Spacer(modifier = Modifier.size(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(text = "Total damage: ${damage.value}")
-                        }
+                        ResultPart(
+                            isError = uiState.value.isError,
+                            isLoading = uiState.value.isLoading,
+                            totalDamageStr = damage.value
+                        )
                         Spacer(modifier = Modifier.size(12.dp))
                     }
                 }

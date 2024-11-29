@@ -3,11 +3,11 @@ package com.levp.nyxem.data
 import com.levp.nyxem.presentation.uistates.ValueUiState
 
 data class ValueState(
-    var attackDamage: Int?,
-    var targetMaxMP: Int?,
-    var targetMagResist: Int?,
-    var targetPhysResist: Int?,
-    var selfMagicAmplify: Int?,
+    var attackDamage: Int? = 0,
+    var targetMaxMP: Int? = 0,
+    var targetMagResist: Int? = 0,
+    var targetPhysResist: Int? = 0,
+    var selfMagicAmplify: Int? = 0,
 ) {
     companion object {
         fun initialState(): ValueState = ValueState(

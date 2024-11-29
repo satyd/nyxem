@@ -30,8 +30,10 @@ fun AbilityElement(
     ability: Abilities,
     onClick: (Boolean, Abilities) -> Unit
 ) {
-
-    Column(verticalArrangement = Arrangement.Center) {
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Icon(
             painter = painterResource(id = drawableId),
             contentDescription = null,
