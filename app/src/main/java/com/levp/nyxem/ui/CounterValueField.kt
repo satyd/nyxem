@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 
 
 @Composable
-fun ValueField(
+fun CounterValueField(
     name: String,
     value: String?,
     modifier: Modifier,
@@ -35,6 +35,7 @@ fun ValueField(
     Row(modifier = Modifier.width(200.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(text = name)
         Spacer(modifier = Modifier.size(2.dp))
+        CounterButton("-") { }
         BasicTextField(
             modifier = modifier
                 .width(64.dp)
@@ -57,6 +58,7 @@ fun ValueField(
             onValueChange = onValueChange,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
+        CounterButton("+") { }
         if (isPercent) {
             Spacer(modifier = Modifier.size(2.dp))
             Text(text = "%")

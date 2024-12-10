@@ -236,7 +236,7 @@ class MainViewModel : ViewModel() {
 
             is ValueUpdate.UpdateMagAmp -> {
                 curState.copy(
-                    selfMagicAmplify = newValue.magAmp
+                    spellAmp = newValue.magAmp
                 )
             }
         }

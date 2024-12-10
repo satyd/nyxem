@@ -7,7 +7,7 @@ data class ValueState(
     var targetMaxMP: Int? = 0,
     var targetMagResist: Int? = 0,
     var targetPhysResist: Int? = 0,
-    var selfMagicAmplify: Int? = 0,
+    var spellAmp: Int? = 0,
 ) {
     companion object {
         fun initialState(): ValueState = ValueState(
@@ -15,7 +15,7 @@ data class ValueState(
             targetMaxMP = 500,
             targetMagResist = 25,
             targetPhysResist = 25,
-            selfMagicAmplify = 0,
+            spellAmp = 0,
 
         )
     }
@@ -27,6 +27,6 @@ fun ValueState.toUiState() : ValueUiState =
         targetMaxMP = targetMaxMP.toString(),
         targetMagResist = targetMagResist.toString(),
         targetPhysResist = targetPhysResist.toString(),
-        selfMagicAmplify = selfMagicAmplify.toString()
+        spellAmp = spellAmp.toString()
     )
 
