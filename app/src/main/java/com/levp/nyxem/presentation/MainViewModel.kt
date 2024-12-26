@@ -10,6 +10,8 @@ import com.levp.nyxem.domain.calculateDamage
 import com.levp.nyxem.domain.constants.Abilities
 import com.levp.nyxem.domain.constants.Properties
 import com.levp.nyxem.data.toAbilityUiState
+import com.levp.nyxem.domain.AllowedValues
+import com.levp.nyxem.domain.ValueError
 import com.levp.nyxem.presentation.uistates.ValueUiState
 import com.levp.nyxem.presentation.uistates.toAbilityState
 import com.levp.nyxem.presentation.uistates.toValueState
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -25,15 +28,15 @@ import kotlinx.coroutines.launch
 @OptIn(FlowPreview::class)
 class MainViewModel : ViewModel() {
 
+    // Data States
     private val mutableAbilityState = MutableStateFlow(AbilityState())
     val currentAbilityState = mutableAbilityState.asStateFlow()
 
     private val mutableValueState = MutableStateFlow(ValueState())
     val currentValueState = mutableValueState.asStateFlow()
 
+    // Ui State
     val uiState = MutableStateFlow(UiState.initState())
-
-    val dataState = MutableStateFlow(UiState.initState())
 
     //Flow for deb
     private val inputFlow = MutableSharedFlow<UpdateIntent>()
@@ -57,26 +60,28 @@ class MainViewModel : ViewModel() {
             UpdateIntent.Error -> {
                 TODO()
             }
+
             is UpdateIntent.UpdateAbility -> {
                 updateAbilityLevel(update.isIncrease, update.ability)
             }
 
             is UpdateIntent.UpdateCounter -> {
-                val updateValue = when(update.property){
+                val updateValue = when (update.property) {
                     Properties.MagicRes -> {
                         ValueUpdate.UpdateMagResistance(
                             (currentValueState.value.targetMagResist.toInt() + 1).toString()
                         )
                     }
+
                     Properties.PhysicalRes -> TODO()
                 }
                 //updateValue(update.isIncrease, update.property)
             }
 
             is UpdateIntent.UpdateValue -> {
-                uiState.update { currState ->
-                    currState.copy(
-                        valueState = updateValue(update.valueUpdate)
+                uiState.update { state ->
+                    state.copy(
+                        valueState = updateValueState(update.valueUpdate)
                     )
                 }
             }
@@ -95,7 +100,7 @@ class MainViewModel : ViewModel() {
         val abilities = uiState.value.abilityState.toAbilityState()
         var isError = false
 
-        if ((values.targetMaxMP ?: 0) < 0 || (values.targetMaxMP ?: 0) > 6000) {
+        if ((values.targetMaxMana ?: 0) < 0 || (values.targetMaxMana ?: 0) > 6000) {
             isError = true
             uiState.update {
                 it.copy(
@@ -109,12 +114,12 @@ class MainViewModel : ViewModel() {
                     isError = false
                 )
             }
-            dataState.update {
+            /*dataState.update {
                 it.copy(
                     abilityState = uiState.value.abilityState,
                     valueState = uiState.value.valueState
                 )
-            }
+            }*/
             calculateDamage()
         }
 
@@ -180,6 +185,7 @@ class MainViewModel : ViewModel() {
                         levelPhylactery = newValue
                     )
                 )
+
                 Abilities.Ethereal -> mutableAbilityState.emit(
                     mutableAbilityState.value.copy(
                         levelEthereal = newValue
@@ -194,79 +200,150 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun updateValue(newValue: ValueUpdate): ValueUiState {
-        val curState = uiState.value.valueState
+    fun updateValueState(newValue: ValueUpdate): ValueUiState {
+        val currentState = uiState.value.valueState
+        var isError = true
+        lateinit var valueError: ValueError
+        val intVal = newValue.value.toIntOrNull() ?: -1
+
         val newState = when (newValue) {
             is ValueUpdate.UpdateDamage -> {
-                curState.copy(
-                    attackDamage = newValue.dmg
+                valueError = ValueError.WrongAttackDamage
+                if (AllowedValues.AttackDamage.range.isInRange(intVal)) {
+                    updateDataValue(newValue)
+                    isError = false
+                }
+
+                currentState.copy(
+                    attackDamage = newValue.value
                 )
             }
 
             is ValueUpdate.UpdateMaxMana -> {
-                curState.copy(
-                    targetMaxMP = newValue.maxMana
-                )
-                /*if (newValue.maxMana.isEmpty()) {
-                    return oldValue.copy(targetMaxMP = null)
+                valueError = ValueError.WrongMaxMana
+                if (AllowedValues.MaxMana.range.isInRange(intVal)) {
+                    updateDataValue(newValue)
+                    isError = false
                 }
-                val intVal = newValue.maxMana.toIntOrNull() ?: -1
-                if (intVal in 100..6000) {
-                    oldValue.copy(targetMaxMP = newValue.maxMana)
-                } else {
-                    oldValue
-                }*/
+
+                currentState.copy(
+                    targetMaxMana = newValue.value
+                )
             }
 
             is ValueUpdate.UpdateMagResistance -> {
-                curState.copy(
-                    targetMagResist = newValue.magRes
-                )
-                /*if (newValue.magRes.isEmpty()) {
-                    return oldValue.copy(targetMagResist = null)
+                valueError = ValueError.WrongMagicResistance
+                if (AllowedValues.MagicResistance.range.isInRange(intVal)) {
+                    updateDataValue(newValue)
+                    isError = false
                 }
-                val intVal = newValue.magRes.toIntOrNull() ?: -1
-                if (intVal in 0..100) {
-                    oldValue.copy(targetMagResist = newValue.magRes)
-                } else {
-                    oldValue
-                }*/
+
+                currentState.copy(
+                    targetMagResist = newValue.value
+                )
             }
 
             is ValueUpdate.UpdatePhysResistance -> {//hehe
-                curState.copy(
-                    targetPhysResist = newValue.physRes
+                valueError = ValueError.WrongPhysicalResistance
+                if (AllowedValues.PhysicalResistance.range.isInRange(intVal)) {
+                    updateDataValue(newValue)
+                    isError = false
+                }
+
+                currentState.copy(
+                    targetPhysResist = newValue.value
                 )
-                /*val intVal = newValue.physRes.toIntOrNull() ?: -1
-                if (intVal in 0..100) {
-                    oldValue.copy(targetPhysResist = newValue.physRes)
-                } else {
-                    oldValue
-                }*/
             }
 
             is ValueUpdate.UpdateMagAmp -> {
-                curState.copy(
-                    spellAmp = newValue.magAmp
+                valueError = ValueError.WrongMagicAmplify
+                if (AllowedValues.MagicAmplify.range.isInRange(intVal)) {
+                    updateDataValue(newValue)
+                    isError = false
+                }
+                currentState.copy(
+                    spellAmp = newValue.value
                 )
             }
         }
+        updateErrors(valueError, isError)
         return newState
+    }
+
+    private fun updateErrors(error: ValueError, isAdd: Boolean) {
+        uiState.update { state ->
+            if (isAdd) {
+                state.copy(
+                    isError = true,
+                    listOfErrors = state.listOfErrors + error
+                )
+            } else {
+                val newErrorList = state.listOfErrors.filter { it != error }
+                state.copy(
+                    isError = newErrorList.isNotEmpty(),
+                    listOfErrors = newErrorList
+                )
+            }
+        }
+    }
+
+    private fun updateDataValue(newValue: ValueUpdate) {
+        viewModelScope.launch {
+            mutableValueState.update { valueState ->
+                val value = newValue.value.toInt()
+                when (newValue) {
+                    is ValueUpdate.UpdateDamage -> {
+                        valueState.copy(
+                            attackDamage = value
+                        )
+                    }
+
+                    is ValueUpdate.UpdateMagAmp -> {
+                        valueState.copy(
+                            spellAmp = value
+                        )
+                    }
+
+                    is ValueUpdate.UpdateMagResistance -> {
+                        valueState.copy(
+                            targetMagResist = value
+                        )
+                    }
+
+                    is ValueUpdate.UpdateMaxMana -> {
+                        valueState.copy(
+                            targetMaxMana = value
+                        )
+                    }
+
+                    is ValueUpdate.UpdatePhysResistance -> {
+                        valueState.copy(
+                            targetPhysResist = value
+                        )
+                    }
+                }
+            }
+            calculateDamage()
+        }
     }
 
     @SuppressLint("DefaultLocale")
     private suspend fun calculateDamage() {
-        uiState
+        Log.v("hehe","calc call ")
+        currentAbilityState
             .debounce(1000L)
-            .collectLatest {
-                val dmg = calculateDamage(
-                    it.abilityState.toAbilityState(),
-                    it.valueState.toValueState()
+            .combine(currentValueState.debounce(1000L)) { abilityState, valueState ->
+                calculateDamage(
+                    abilityState,
+                    valueState
                 )
+            }
+            .debounce(1000L)
+            .collectLatest { dmg ->
                 //val df = DecimalFormat("#.##")
                 val formatted = String.format("%.2f", dmg).replace(",", ".")
                 mutableDamage.emit(formatted)
-                Log.i("hehe","damage updated")
+                Log.i("hehe", "damage updated $dmg")
                 uiState.update {
                     it.copy(
                         isLoading = false

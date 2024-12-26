@@ -12,6 +12,7 @@ import com.levp.nyxem.domain.constants.abPhylactery
 import com.levp.nyxem.domain.constants.abVendetta
 
 fun calculateDamage(ab: AbilityState, v: ValueState): Double {
+    Log.d("hehe","calculating with: \n ability = $ab \n value = $v")
     val spellAmp = (v.spellAmp ?: 0) / 100
     val magDealing = 1 - (v.targetMagResist?.toDouble() ?: 0.0) / 100 + spellAmp
     val physDealing = 1 - (v.targetPhysResist?.toDouble() ?: 0.0) / 100
@@ -46,7 +47,7 @@ fun calculateDamage(ab: AbilityState, v: ValueState): Double {
     //attack + ability damage with resistances
     val sumDmg = attackDmg + abilityDmg
 
-    val flareManaDmg = ((v.targetMaxMP?.toDouble()
+    val flareManaDmg = ((v.targetMaxMana?.toDouble()
         ?: 0.0) * abMindFlare.manaAsDamage[ab.levelMindFlare]) * magDealing
 
     val flareBonus = if (ab.levelMindFlare > 0) {

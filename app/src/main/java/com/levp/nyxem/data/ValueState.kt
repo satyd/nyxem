@@ -4,7 +4,7 @@ import com.levp.nyxem.presentation.uistates.ValueUiState
 
 data class ValueState(
     val attackDamage: Int = 0,
-    val targetMaxMP: Int = 0,
+    val targetMaxMana: Int = 0,
     val targetMagResist: Int = 0,
     val targetPhysResist: Int = 0,
     val spellAmp: Int = 0,
@@ -13,7 +13,7 @@ data class ValueState(
         fun initialState(): ValueState =
             ValueState(
                 attackDamage = 120,
-                targetMaxMP = 500,
+                targetMaxMana = 500,
                 targetMagResist = 25,
                 targetPhysResist = 25,
                 spellAmp = 0,
@@ -24,7 +24,7 @@ data class ValueState(
 fun ValueState.toUiState(): ValueUiState =
     ValueUiState(
         attackDamage = attackDamage.toString(),
-        targetMaxMP = targetMaxMP.toString(),
+        targetMaxMana = targetMaxMana.toString(),
         targetMagResist = targetMagResist.toString(),
         targetPhysResist = targetPhysResist.toString(),
         spellAmp = spellAmp.toString()

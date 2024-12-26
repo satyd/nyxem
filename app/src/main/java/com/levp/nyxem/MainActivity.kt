@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -22,22 +21,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.levp.nyxem.presentation.MainViewModel
 import com.levp.nyxem.domain.constants.Abilities
-import com.levp.nyxem.domain.constants.Properties
 import com.levp.nyxem.presentation.UpdateIntent
 import com.levp.nyxem.presentation.ValueUpdate
 import com.levp.nyxem.presentation.item_rows.AbilityRow
 import com.levp.nyxem.presentation.item_rows.AutoAttackRow
 import com.levp.nyxem.presentation.item_rows.ItemRow
 import com.levp.nyxem.presentation.item_rows.TargetMagResRow
-import com.levp.nyxem.ui.AbilityCounters
-import com.levp.nyxem.ui.AbilityElement
 import com.levp.nyxem.ui.ResultPart
 import com.levp.nyxem.ui.ValueField
 import com.levp.nyxem.ui.theme.NyxemTheme
@@ -65,7 +60,7 @@ class MainActivity : ComponentActivity() {
                         uiState.value.valueState,
                         uiState.value.abilityState
                     ) {
-                        viewModel.validateInput()
+                        //viewModel.validateInput()
                     }
                     //current total damage
                     val damage = viewModel.currentDamage.collectAsState()
@@ -75,11 +70,11 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    val updateCounterValue: (Boolean, Properties) -> Unit = remember {
+                    /*val updateCounterValue: (Boolean, Properties) -> Unit = remember {
                         { increase, property ->
                             viewModel.handleUpdate(UpdateIntent.UpdateAbility(increase, property))
                         }
-                    }
+                    }*/
 
                     Column(
                         modifier = Modifier
@@ -123,7 +118,7 @@ class MainActivity : ComponentActivity() {
                             Column {
                                 ValueField(
                                     name = "Max Mana",
-                                    value = valueState.targetMaxMP,
+                                    value = valueState.targetMaxMana,
                                     isPercent = false,
                                     modifier = Modifier,
                                     onValueChange = { newValue ->
