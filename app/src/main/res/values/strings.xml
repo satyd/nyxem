@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">nyx\'em</string>
+    <string name="target_mag_res">"Target Mag Res "</string>
+    <string name="target_phys_res">"Target Phys Res "</string>
 </resources>

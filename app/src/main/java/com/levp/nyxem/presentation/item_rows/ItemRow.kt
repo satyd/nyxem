@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.levp.nyxem.R
-import com.levp.nyxem.data.constants.Abilities
+import com.levp.nyxem.domain.constants.Abilities
 import com.levp.nyxem.presentation.uistates.AbilityUiState
 import com.levp.nyxem.ui.AbilityElement
 

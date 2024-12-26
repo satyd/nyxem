@@ -13,8 +13,8 @@ data class ValueUiState(
         fun initialState(): ValueUiState = ValueUiState(
             attackDamage = "120",
             targetMaxMP = "500",
-            targetMagResist = "25",
-            targetPhysResist = "25",
+            targetMagResist = "30",
+            targetPhysResist = "30",
             spellAmp = "0",
 
         )

@@ -6,8 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.levp.nyxem.data.AbilityState
 import com.levp.nyxem.data.ValueState
-import com.levp.nyxem.data.calculateDamage
-import com.levp.nyxem.data.constants.Abilities
+import com.levp.nyxem.domain.calculateDamage
+import com.levp.nyxem.domain.constants.Abilities
+import com.levp.nyxem.domain.constants.Properties
 import com.levp.nyxem.data.toAbilityUiState
 import com.levp.nyxem.presentation.uistates.ValueUiState
 import com.levp.nyxem.presentation.uistates.toAbilityState
@@ -53,9 +54,23 @@ class MainViewModel : ViewModel() {
 
     fun handleUpdate(update: UpdateIntent) {
         when (update) {
-            UpdateIntent.Error -> TODO()
+            UpdateIntent.Error -> {
+                TODO()
+            }
             is UpdateIntent.UpdateAbility -> {
                 updateAbilityLevel(update.isIncrease, update.ability)
+            }
+
+            is UpdateIntent.UpdateCounter -> {
+                val updateValue = when(update.property){
+                    Properties.MagicRes -> {
+                        ValueUpdate.UpdateMagResistance(
+                            (currentValueState.value.targetMagResist.toInt() + 1).toString()
+                        )
+                    }
+                    Properties.PhysicalRes -> TODO()
+                }
+                //updateValue(update.isIncrease, update.property)
             }
 
             is UpdateIntent.UpdateValue -> {
@@ -102,10 +117,6 @@ class MainViewModel : ViewModel() {
             }
             calculateDamage()
         }
-
-    }
-
-    fun switchErrorState(isError: Boolean) {
 
     }
 

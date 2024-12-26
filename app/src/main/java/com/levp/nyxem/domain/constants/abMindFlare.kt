@@ -1,4 +1,4 @@
-package com.levp.nyxem.data.constants
+package com.levp.nyxem.domain.constants
 
 object abMindFlare {
     val bonusDamage: Double = 0.25

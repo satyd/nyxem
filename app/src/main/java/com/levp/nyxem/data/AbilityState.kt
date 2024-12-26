@@ -3,13 +3,13 @@ package com.levp.nyxem.data
 import com.levp.nyxem.presentation.uistates.AbilityUiState
 
 data class AbilityState(
-    var numberOfAttacks: Int = 1,
-    var levelImpale: Int = 0,
-    var levelMindFlare: Int = 0,
-    var levelVendetta: Int = 0,
-    var levelDagon: Int = 0,
-    var levelEthereal: Int = 0,
-    var levelPhylactery: Int = 0,
+    val numberOfAttacks: Int = 1,
+    val levelImpale: Int = 0,
+    val levelMindFlare: Int = 0,
+    val levelVendetta: Int = 0,
+    val levelDagon: Int = 0,
+    val levelEthereal: Int = 0,
+    val levelPhylactery: Int = 0,
 )
 
 fun AbilityState.toAbilityUiState(): AbilityUiState =

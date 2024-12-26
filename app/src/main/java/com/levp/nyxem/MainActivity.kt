@@ -28,7 +28,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.levp.nyxem.presentation.MainViewModel
-import com.levp.nyxem.data.constants.Abilities
+import com.levp.nyxem.domain.constants.Abilities
+import com.levp.nyxem.domain.constants.Properties
 import com.levp.nyxem.presentation.UpdateIntent
 import com.levp.nyxem.presentation.ValueUpdate
 import com.levp.nyxem.presentation.item_rows.AbilityRow
@@ -71,6 +72,12 @@ class MainActivity : ComponentActivity() {
                     val updateAbilityValue: (Boolean, Abilities) -> Unit = remember {
                         { increase, ability ->
                             viewModel.handleUpdate(UpdateIntent.UpdateAbility(increase, ability))
+                        }
+                    }
+
+                    val updateCounterValue: (Boolean, Properties) -> Unit = remember {
+                        { increase, property ->
+                            viewModel.handleUpdate(UpdateIntent.UpdateAbility(increase, property))
                         }
                     }
 

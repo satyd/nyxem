@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.levp.nyxem.data.ValueState
-import com.levp.nyxem.data.constants.Abilities
+import com.levp.nyxem.domain.constants.Abilities
 import com.levp.nyxem.presentation.UpdateIntent
 import com.levp.nyxem.presentation.ValueUpdate
 import com.levp.nyxem.presentation.uistates.AbilityUiState

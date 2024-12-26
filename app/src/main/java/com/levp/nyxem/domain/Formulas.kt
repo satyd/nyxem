@@ -1,13 +1,15 @@
-package com.levp.nyxem.data
+package com.levp.nyxem.domain
 
 import android.util.Log
-import com.levp.nyxem.data.constants.Abilities
-import com.levp.nyxem.data.constants.abDagon
-import com.levp.nyxem.data.constants.abEthereal
-import com.levp.nyxem.data.constants.abImpale
-import com.levp.nyxem.data.constants.abMindFlare
-import com.levp.nyxem.data.constants.abPhylactery
-import com.levp.nyxem.data.constants.abVendetta
+import com.levp.nyxem.data.AbilityState
+import com.levp.nyxem.data.ValueState
+import com.levp.nyxem.domain.constants.Abilities
+import com.levp.nyxem.domain.constants.abDagon
+import com.levp.nyxem.domain.constants.abEthereal
+import com.levp.nyxem.domain.constants.abImpale
+import com.levp.nyxem.domain.constants.abMindFlare
+import com.levp.nyxem.domain.constants.abPhylactery
+import com.levp.nyxem.domain.constants.abVendetta
 
 fun calculateDamage(ab: AbilityState, v: ValueState): Double {
     val spellAmp = (v.spellAmp ?: 0) / 100

@@ -1,4 +1,4 @@
-package com.levp.nyxem.data.constants
+package com.levp.nyxem.domain.constants
 
 object abEthereal {
     private const val DAMAGE_TO_STATS = 1.415
